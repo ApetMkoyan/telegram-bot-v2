@@ -28,11 +28,19 @@ const activeSessions = {};
 // Загрузка данных
 function loadData() {
   try {
+    console.log('📂 Попытка загрузки данных из:', config.DATA_SETTINGS.dataFile);
+    console.log('📁 Папка данных:', dataDir);
+    
     if (fs.existsSync(config.DATA_SETTINGS.dataFile)) {
       const raw = fs.readFileSync(config.DATA_SETTINGS.dataFile);
       parksData = JSON.parse(raw);
       console.log('✅ Данные загружены успешно');
+      console.log('📊 Загружено парков:', Object.keys(parksData).length);
+      Object.keys(parksData).forEach(park => {
+        console.log(`  - ${park}: ${parksData[park].employees?.length || 0} сотрудников`);
+      });
     } else {
+      console.log('📝 Файл данных не найден, создаю новую структуру...');
       parksData = {
         parkFrunze: { 
           employees: [], 
@@ -67,6 +75,7 @@ function loadData() {
     }
   } catch (error) {
     console.log('❌ Ошибка загрузки данных:', error);
+    console.log('🔄 Создаю резервную структуру данных...');
     parksData = {
       parkFrunze: { employees: [], shifts: {}, machines: [] },
       parkMorVokzal: { employees: [], shifts: {}, machines: [] },
@@ -78,10 +87,18 @@ function loadData() {
 // Сохранение данных
 function saveData() {
   try {
+    console.log('💾 Сохранение данных в:', config.DATA_SETTINGS.dataFile);
     fs.writeFileSync(config.DATA_SETTINGS.dataFile, JSON.stringify(parksData, null, 2));
-    console.log('💾 Данные сохранены');
+    console.log('✅ Данные сохранены успешно');
   } catch (error) {
     console.log('❌ Ошибка сохранения данных:', error);
+    console.log('📁 Проверка прав доступа к папке:', dataDir);
+    try {
+      fs.accessSync(dataDir, fs.constants.W_OK);
+      console.log('✅ Права на запись есть');
+    } catch (accessError) {
+      console.log('❌ Нет прав на запись:', accessError.message);
+    }
   }
 }
 

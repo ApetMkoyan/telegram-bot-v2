@@ -7,6 +7,10 @@ function showEmployeesMenu(chatId, state, bot) {
   const employees = parksData[park]?.employees || [];
   const parkName = config.PARKS[park]?.name || park;
   
+  console.log(`🔍 showEmployeesMenu: park=${park}, employees=${employees.length}`);
+  console.log(`📊 parksData keys:`, Object.keys(parksData));
+  console.log(`📊 parksData[${park}]:`, parksData[park]);
+  
   let message = `👥 Сотрудники парка ${parkName}:\n\n`;
   if (employees.length === 0) {
     message += 'Список сотрудников пуст';
@@ -37,6 +41,9 @@ function showShiftsMenu(chatId, state, bot) {
   const employees = parksData[park]?.employees || [];
   const shifts = parksData[park]?.shifts || {};
   const parkName = config.PARKS[park]?.name || park;
+  
+  console.log(`🔍 showShiftsMenu: park=${park}, employees=${employees.length}`);
+  console.log(`📊 shifts data:`, shifts);
   
   let message = `📅 Таблица смен парка ${parkName}:\n\n`;
   
@@ -75,6 +82,9 @@ function showHockeyMenu(chatId, state, bot) {
   const hockeyHistory = parksData[park]?.hockeyHistory || [];
   const nextCollection = parksData[park]?.nextHockeyCollection || moment().add(config.MACHINES.hockeyCollectionInterval, 'days').format('YYYY-MM-DD');
   const parkName = config.PARKS[park]?.name || park;
+  
+  console.log(`🔍 showHockeyMenu: park=${park}, history=${hockeyHistory.length}`);
+  console.log(`📊 hockeyHistory:`, hockeyHistory);
   
   let message = `🏒 Хоккей парка ${parkName}:\n\n`;
   message += `📅 Следующий сбор: ${moment(nextCollection).format('DD.MM.YYYY')}\n`;
