@@ -4,7 +4,8 @@
   "description": "Улучшенный телеграм бот для управления парком аттракционов",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js",
+    "start": "node server.js",
+    "bot": "node bot.js",
     "dev": "nodemon bot.js",
     "test": "node test-bot.js",
     "check": "node -e \"require('./config'); console.log('✅ Конфигурация загружена успешно');\"",
@@ -13,7 +14,8 @@
   "dependencies": {
     "node-telegram-bot-api": "^0.64.0",
     "dotenv": "^16.4.5",
-    "moment": "^2.30.1"
+    "moment": "^2.30.1",
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
