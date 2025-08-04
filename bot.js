@@ -192,21 +192,27 @@ bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
   
+  console.log(`📨 Получено сообщение от ${chatId}: ${text}`);
+  
   const securityCheck = checkSecurity(chatId);
   if (!securityCheck.allowed) {
     bot.sendMessage(chatId, `❌ ${securityCheck.reason}. Попробуйте позже.`);
     return;
   }
   
+  // Проверяем, есть ли состояние пользователя
   if (!userStates[chatId]) {
+    console.log(`🆕 Новый пользователь ${chatId}, создаю состояние`);
     userStates[chatId] = { state: 'login', step: 'username' };
     loginAttempts[chatId] = 0;
   }
   
   const state = userStates[chatId];
+  console.log(`👤 Состояние пользователя ${chatId}:`, state);
   
   // Обработка выхода
   if (text === '🚪 Выйти') {
+    console.log(`🚪 Пользователь ${chatId} выходит из системы`);
     delete userStates[chatId];
     delete activeSessions[chatId];
     delete loginAttempts[chatId];
@@ -216,6 +222,7 @@ bot.on('message', (msg) => {
   
   // Обработка возврата
   if (text === '🔙 Назад') {
+    console.log(`🔙 Пользователь ${chatId} возвращается назад`);
     if (state.state === 'logged_in') {
       showMainMenu(chatId);
     } else {
@@ -227,17 +234,20 @@ bot.on('message', (msg) => {
   
   // Обработка авторизации
   if (state.state === 'login') {
+    console.log(`🔐 Обработка авторизации для ${chatId}`);
     handleLogin(chatId, text, state);
     return;
   }
   
   // Обработка главного меню
   if (state.state === 'logged_in') {
+    console.log(`📋 Обработка главного меню для ${chatId}: ${text}`);
     handleMainMenu(chatId, text, state);
     return;
   }
   
   // Обработка состояний
+  console.log(`🔄 Обработка состояний для ${chatId}: ${state.currentSection}`);
   handleStates(chatId, text, state);
 });
 
@@ -415,7 +425,12 @@ function showSettings(chatId, state) {
 
 // Обработка состояний
 function handleStates(chatId, text, state) {
-  if (!state.currentSection) return;
+  if (!state.currentSection) {
+    console.log(`❌ Нет текущей секции для ${chatId}`);
+    return;
+  }
+  
+  console.log(`🔄 Обработка состояния ${state.currentSection} для ${chatId}`);
   
   // Установка данных парков для обработчиков
   handlers.setParksData(parksData);
@@ -423,20 +438,29 @@ function handleStates(chatId, text, state) {
   
   switch (state.currentSection) {
     case 'employees':
+      console.log(`👥 Обработка сотрудников для ${chatId}`);
       handlers.handleEmployeesStates(chatId, text, state, bot);
       break;
     case 'shifts':
+      console.log(`📅 Обработка смен для ${chatId}`);
       handlers.handleShiftsStates(chatId, text, state, bot);
       break;
     case 'hockey':
+      console.log(`🏒 Обработка хоккея для ${chatId}`);
       handlers.handleHockeyStates(chatId, text, state, bot);
       break;
     case 'boxer':
+      console.log(`🥊 Обработка боксёра для ${chatId}`);
       handlers.handleBoxerStates(chatId, text, state, bot);
       break;
     case 'tomorrow_shift':
+      console.log(`📅 Обработка смены на завтра для ${chatId}`);
       handleTomorrowShiftStates(chatId, text, state);
       break;
+    default:
+      console.log(`❌ Неизвестная секция: ${state.currentSection}`);
+      bot.sendMessage(chatId, 'Произошла ошибка. Попробуйте еще раз.');
+      showMainMenu(chatId);
   }
 }
 
@@ -578,7 +602,20 @@ setInterval(logStatus, 5 * 60 * 1000); // Каждые 5 минут
 
 // Обработка ошибок
 bot.on('polling_error', (error) => {
-  console.log('❌ Polling error:', error);
+  console.log('❌ Polling error:', error.message);
+  
+  // Обработка ошибки 409 - конфликт с другим экземпляром бота
+  if (error.code === 'ETELEGRAM' && error.response && error.response.statusCode === 409) {
+    console.log('⚠️ Обнаружен конфликт с другим экземпляром бота');
+    console.log('🔄 Перезапуск через 10 секунд...');
+    setTimeout(() => {
+      console.log('🔄 Перезапуск бота...');
+      bot.stopPolling();
+      setTimeout(() => {
+        bot.startPolling();
+      }, 2000);
+    }, 10000);
+  }
 });
 
 bot.on('error', (error) => {
