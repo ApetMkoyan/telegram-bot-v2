@@ -319,28 +319,28 @@ function handleMainMenu(chatId, text, state) {
   switch (text) {
     case '👥 Сотрудники':
       if (checkPermission(state.role, 'read')) {
-        showEmployeesMenu(chatId, state);
+        showEmployeesMenu(chatId, state, bot);
       } else {
         bot.sendMessage(chatId, '❌ У вас нет прав для просмотра сотрудников.');
       }
       break;
     case '📅 Смены':
       if (checkPermission(state.role, 'read')) {
-        showShiftsMenu(chatId, state);
+        showShiftsMenu(chatId, state, bot);
       } else {
         bot.sendMessage(chatId, '❌ У вас нет прав для просмотра смен.');
       }
       break;
     case '🏒 Хоккей':
       if (checkPermission(state.role, 'read')) {
-        showHockeyMenu(chatId, state);
+        showHockeyMenu(chatId, state, bot);
       } else {
         bot.sendMessage(chatId, '❌ У вас нет прав для просмотра хоккея.');
       }
       break;
     case '🥊 Боксёр':
       if (checkPermission(state.role, 'read')) {
-        showBoxerMenu(chatId, state);
+        showBoxerMenu(chatId, state, bot);
       } else {
         bot.sendMessage(chatId, '❌ У вас нет прав для просмотра боксёра.');
       }
