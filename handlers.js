@@ -15,6 +15,7 @@ function showEmployeesMenu(chatId, state, bot) {
   if (employees.length === 0) {
     message += 'Список сотрудников пуст';
   } else {
+    message += `📊 Всего сотрудников: ${employees.length}\n\n`;
     employees.forEach((emp, index) => {
       message += `${index + 1}. ${emp}\n`;
     });
@@ -23,8 +24,9 @@ function showEmployeesMenu(chatId, state, bot) {
   const keyboard = {
     reply_markup: {
       keyboard: [
-        ['➕ Добавить сотрудника'],
-        ['🗑️ Удалить сотрудника'],
+        ['➕ Добавить сотрудника', '🗑️ Удалить сотрудника'],
+        ['📋 Кто сегодня работает', '📅 Кто завтра работает'],
+        ['🔍 Найти сотрудника', '📊 Статистика'],
         ['🔙 Назад']
       ],
       resize_keyboard: true
@@ -63,9 +65,9 @@ function showShiftsMenu(chatId, state, bot) {
   const keyboard = {
     reply_markup: {
       keyboard: [
-        ['✏️ Редактировать смены'],
-        ['📅 Смена на завтра'],
-        ['💰 Расчёт зарплаты'],
+        ['✏️ Редактировать смены', '📅 Смена на завтра'],
+        ['💰 Расчёт зарплаты', '📊 Статистика смен'],
+        ['🔄 Массовое редактирование', '📋 Экспорт смен'],
         ['🔙 Назад']
       ],
       resize_keyboard: true
@@ -178,6 +180,118 @@ function handleEmployeesStates(chatId, text, state, bot) {
     
     state.subState = 'deleting_employee';
     bot.sendMessage(chatId, message);
+  } else if (text === '📋 Кто сегодня работает') {
+    const park = state.park;
+    const employees = parksData[park]?.employees || [];
+    const shifts = parksData[park]?.shifts || {};
+    const today = new Date();
+    const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1;
+    
+    let workingEmployees = [];
+    let dayOffEmployees = [];
+    
+    employees.forEach(name => {
+      const employeeShifts = shifts[name] || Array(7).fill('');
+      const todayShift = employeeShifts[dayOfWeek] || '';
+      
+      if (todayShift && todayShift !== 'вых') {
+        workingEmployees.push(name);
+      } else {
+        dayOffEmployees.push(name);
+      }
+    });
+    
+    let message = `📋 Кто сегодня работает (${today.toLocaleDateString('ru-RU')}):\n\n`;
+    
+    if (workingEmployees.length > 0) {
+      message += '✅ Работают:\n';
+      workingEmployees.forEach(name => {
+        message += `• ${name}\n`;
+      });
+      message += '\n';
+    }
+    
+    if (dayOffEmployees.length > 0) {
+      message += '❌ Выходные:\n';
+      dayOffEmployees.forEach(name => {
+        message += `• ${name}\n`;
+      });
+    }
+    
+    message += `\n📊 Статистика: ${workingEmployees.length} работают, ${dayOffEmployees.length} выходные`;
+    
+    bot.sendMessage(chatId, message);
+  } else if (text === '📅 Кто завтра работает') {
+    const park = state.park;
+    const employees = parksData[park]?.employees || [];
+    const shifts = parksData[park]?.shifts || {};
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayOfWeek = tomorrow.getDay() === 0 ? 6 : tomorrow.getDay() - 1;
+    
+    let workingEmployees = [];
+    let dayOffEmployees = [];
+    
+    employees.forEach(name => {
+      const employeeShifts = shifts[name] || Array(7).fill('');
+      const tomorrowShift = employeeShifts[dayOfWeek] || '';
+      
+      if (tomorrowShift && tomorrowShift !== 'вых') {
+        workingEmployees.push(name);
+      } else {
+        dayOffEmployees.push(name);
+      }
+    });
+    
+    let message = `📅 Кто завтра работает (${tomorrow.toLocaleDateString('ru-RU')}):\n\n`;
+    
+    if (workingEmployees.length > 0) {
+      message += '✅ Работают:\n';
+      workingEmployees.forEach(name => {
+        message += `• ${name}\n`;
+      });
+      message += '\n';
+    }
+    
+    if (dayOffEmployees.length > 0) {
+      message += '❌ Выходные:\n';
+      dayOffEmployees.forEach(name => {
+        message += `• ${name}\n`;
+      });
+    }
+    
+    message += `\n📊 Статистика: ${workingEmployees.length} работают, ${dayOffEmployees.length} выходные`;
+    
+    bot.sendMessage(chatId, message);
+  } else if (text === '🔍 Найти сотрудника') {
+    state.subState = 'searching_employee';
+    bot.sendMessage(chatId, 'Введите имя сотрудника для поиска:');
+  } else if (text === '📊 Статистика') {
+    const park = state.park;
+    const employees = parksData[park]?.employees || [];
+    const shifts = parksData[park]?.shifts || {};
+    
+    let totalWorkingDays = 0;
+    let totalSalary = 0;
+    
+    employees.forEach(name => {
+      const employeeShifts = shifts[name] || Array(7).fill('');
+      const workingDays = employeeShifts.filter(shift => shift && shift !== 'вых').length;
+      totalWorkingDays += workingDays;
+      totalSalary += calculateSalary(name, employeeShifts);
+    });
+    
+    const avgWorkingDays = employees.length > 0 ? (totalWorkingDays / employees.length).toFixed(1) : 0;
+    const avgSalary = employees.length > 0 ? (totalSalary / employees.length).toFixed(0) : 0;
+    
+    let message = `📊 Статистика сотрудников:\n\n`;
+    message += `👥 Всего сотрудников: ${employees.length}\n`;
+    message += `📅 Всего рабочих дней: ${totalWorkingDays}\n`;
+    message += `📊 Среднее рабочих дней: ${avgWorkingDays}\n`;
+    message += `💰 Общая зарплата: ${totalSalary}₽\n`;
+    message += `💰 Средняя зарплата: ${avgSalary}₽\n`;
+    
+    bot.sendMessage(chatId, message);
   } else if (state.subState === 'adding_employee') {
     const park = state.park;
     if (!parksData[park].employees.includes(text)) {
@@ -203,6 +317,31 @@ function handleEmployeesStates(chatId, text, state, bot) {
       bot.sendMessage(chatId, `✅ Сотрудник "${employeeName}" удалён!`);
     } else {
       bot.sendMessage(chatId, '❌ Неверный номер сотрудника!');
+    }
+    delete state.subState;
+    showEmployeesMenu(chatId, state, bot);
+  } else if (state.subState === 'searching_employee') {
+    const park = state.park;
+    const employees = parksData[park]?.employees || [];
+    const shifts = parksData[park]?.shifts || {};
+    
+    const foundEmployee = employees.find(emp => 
+      emp.toLowerCase().includes(text.toLowerCase())
+    );
+    
+    if (foundEmployee) {
+      const employeeShifts = shifts[foundEmployee] || Array(7).fill('');
+      const salary = calculateSalary(foundEmployee, employeeShifts);
+      const workingDays = employeeShifts.filter(shift => shift && shift !== 'вых').length;
+      
+      let message = `🔍 Найден сотрудник: ${foundEmployee}\n\n`;
+      message += `💰 Зарплата: ${salary}₽\n`;
+      message += `📅 Рабочих дней: ${workingDays}\n`;
+      message += `📊 Смены: ${employeeShifts.join(' | ')}\n`;
+      
+      bot.sendMessage(chatId, message);
+    } else {
+      bot.sendMessage(chatId, `❌ Сотрудник "${text}" не найден!`);
     }
     delete state.subState;
     showEmployeesMenu(chatId, state, bot);
@@ -252,6 +391,66 @@ function handleShiftsStates(chatId, text, state, bot) {
     
     message += `\n💵 Общая зарплата: ${totalSalary}₽`;
     bot.sendMessage(chatId, message);
+  } else if (text === '📊 Статистика смен') {
+    const park = state.park;
+    const employees = parksData[park]?.employees || [];
+    const shifts = parksData[park]?.shifts || {};
+    
+    let totalWorkingDays = 0;
+    let totalSalary = 0;
+    
+    employees.forEach(name => {
+      const employeeShifts = shifts[name] || Array(7).fill('');
+      const workingDays = employeeShifts.filter(shift => shift && shift !== 'вых').length;
+      totalWorkingDays += workingDays;
+      totalSalary += calculateSalary(name, employeeShifts);
+    });
+    
+    const avgWorkingDays = employees.length > 0 ? (totalWorkingDays / employees.length).toFixed(1) : 0;
+    const avgSalary = employees.length > 0 ? (totalSalary / employees.length).toFixed(0) : 0;
+    
+    let message = `📊 Статистика смен:\n\n`;
+    message += `👥 Всего сотрудников: ${employees.length}\n`;
+    message += `📅 Всего рабочих дней: ${totalWorkingDays}\n`;
+    message += `📊 Среднее рабочих дней: ${avgWorkingDays}\n`;
+    message += `💰 Общая зарплата: ${totalSalary}₽\n`;
+    message += `💰 Средняя зарплата: ${avgSalary}₽\n`;
+    
+    bot.sendMessage(chatId, message);
+  } else if (text === '🔄 Массовое редактирование') {
+    if (!checkPermission(state.role, 'manage_shifts')) {
+      bot.sendMessage(chatId, '❌ У вас нет прав для массового редактирования смен.');
+      return;
+    }
+    const employees = parksData[state.park]?.employees || [];
+    if (employees.length === 0) {
+      bot.sendMessage(chatId, 'Нет сотрудников для массового редактирования смен');
+      return;
+    }
+    
+    let message = 'Выберите сотрудника для массового редактирования смен:\n\n';
+    employees.forEach((emp, index) => {
+      message += `${index + 1}. ${emp}\n`;
+    });
+    
+    state.subState = 'mass_editing_shifts';
+    bot.sendMessage(chatId, message);
+  } else if (text === '📋 Экспорт смен') {
+    const park = state.park;
+    const employees = parksData[park]?.employees || [];
+    const shifts = parksData[park]?.shifts || {};
+    
+    let message = `📋 Экспорт смен парка ${config.PARKS[park]?.name || park}:\n\n`;
+    
+    employees.forEach(name => {
+      message += `${name}:\n`;
+      shifts[name].forEach((shift, index) => {
+        message += `${config.SHIFTS.workDays[index]}: ${shift}\n`;
+      });
+      message += '\n';
+    });
+    
+    bot.sendMessage(chatId, message);
   } else if (state.subState === 'selecting_employee_for_shifts') {
     const park = state.park;
     const employees = parksData[park]?.employees || [];
@@ -277,6 +476,46 @@ function handleShiftsStates(chatId, text, state, bot) {
       showShiftsMenu(chatId, state, bot);
     }
   } else if (state.subState === 'editing_shifts') {
+    const park = state.park;
+    const values = text.split(',').map(v => v.trim());
+    
+    if (values.length === 7) {
+      const employeeName = state.selectedEmployee;
+      parksData[park].shifts[employeeName] = values;
+      saveData();
+      
+      bot.sendMessage(chatId, `✅ Смены для ${employeeName} обновлены!`);
+      delete state.subState;
+      delete state.selectedEmployee;
+      showShiftsMenu(chatId, state, bot);
+    } else {
+      bot.sendMessage(chatId, '❌ Неверный формат! Введите 7 значений через запятую.');
+    }
+  } else if (state.subState === 'mass_editing_shifts') {
+    const park = state.park;
+    const employees = parksData[park]?.employees || [];
+    const index = parseInt(text) - 1;
+    
+    if (index >= 0 && index < employees.length) {
+      const employeeName = employees[index];
+      state.selectedEmployee = employeeName;
+      state.subState = 'mass_editing_shifts_values';
+      
+      const shifts = parksData[park]?.shifts?.[employeeName] || Array(7).fill('');
+      
+      let message = `Массовое редактирование смен для ${employeeName}:\n\n`;
+      config.SHIFTS.workDays.forEach((day, i) => {
+        message += `${day}: ${shifts[i] || ''}\n`;
+      });
+      message += '\nВведите новые значения через запятую (7 значений):';
+      
+      bot.sendMessage(chatId, message);
+    } else {
+      bot.sendMessage(chatId, '❌ Неверный номер сотрудника!');
+      delete state.subState;
+      showShiftsMenu(chatId, state, bot);
+    }
+  } else if (state.subState === 'mass_editing_shifts_values') {
     const park = state.park;
     const values = text.split(',').map(v => v.trim());
     
