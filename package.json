@@ -1,0 +1,35 @@
+{
+  "name": "telegram-bot-v2",
+  "version": "2.0.0",
+  "description": "Улучшенный телеграм бот для управления парком аттракционов",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js",
+    "test": "node test-bot.js",
+    "check": "node -e \"require('./config'); console.log('✅ Конфигурация загружена успешно');\""
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0",
+    "dotenv": "^16.3.1",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "park",
+    "management",
+    "shifts",
+    "employees",
+    "hockey",
+    "boxer"
+  ],
+  "author": "Park Management Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
