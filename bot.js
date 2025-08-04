@@ -361,6 +361,12 @@ function handleMainMenu(chatId, text, state) {
 // Импорт обработчиков
 const handlers = require('./handlers');
 
+// Функции для показа меню (импортированные из handlers)
+const showEmployeesMenu = handlers.showEmployeesMenu;
+const showShiftsMenu = handlers.showShiftsMenu;
+const showHockeyMenu = handlers.showHockeyMenu;
+const showBoxerMenu = handlers.showBoxerMenu;
+
 // Отчёты
 function showReports(chatId, state) {
   const park = state.park;
